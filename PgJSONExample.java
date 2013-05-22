@@ -1,8 +1,14 @@
-import java.sql.*;
+import org.postgresql.util.PGobject;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
  
 public class PgJSONExample {
  
-        public static void main(String[] argv) {
+        public static void main(String[] argv) throws SQLException
+        {
  
                 System.out.println("-------- PostgreSQL "
                                 + "JDBC Connection Testing ------------");
@@ -27,8 +33,7 @@ public class PgJSONExample {
                 try {
  
                         connection = DriverManager.getConnection(
-                                        "jdbc:postgresql://localhost:5432/postgres", "denish",
-                                        "omniti");
+                                        "jdbc:postgresql://localhost:5432/postgres", "denish", "omniti");
  
                 } catch (SQLException e) {
  
@@ -44,16 +49,19 @@ public class PgJSONExample {
                         System.out.println("Failed to make connection!");
                 }
 
-                int id = 1;
-		String data = "{\"username\":\"denish\",\"posts\":10122,\"emailaddress\":\"denish@omniti.com\"}";
+                int id = 2;
+		String data = "{\"username\":\"robert\",\"posts\":100122,\"emailaddress\":\"robert@omniti.com\"}";
 
-                try { // I show a preparedstatement example here because it's probably more generally useful than the plain statement approach.
-			PreparedStatement stmt = connection.prepareStatement("insert into sample (id, data) values (?,CAST(? as json) )");
-                        stmt.setInt(1, id); // placeholder index is 1-based for jdbc (and raw jdbc only does numeric placeholder references sadly. spring's jdbctemplate can handle named params)
-			stmt.setString(2, data); // I am not 100% sure this'll work w/ json datatype.  My server at home is 9.1, otherwise I'd test for sure.  Guessing it's ok?
+            PGobject dataObject = new PGobject();
+            dataObject.setType("json");
+            dataObject.setValue(data);
+
+                try { 
+			PreparedStatement stmt = connection.prepareStatement("insert into sample (id, data) values (?, ?)");
+                        stmt.setInt(1, id);
+			stmt.setObject(2, dataObject); 
                         
                         stmt.executeUpdate(); 
-// executeQuery is for selects and throws sqlexception if no resultset is generated, executeUpdate is for things that wouldn't return e.g. insert w/out a returning clause
 
                         stmt.close();
                 } catch (SQLException sqle) {
